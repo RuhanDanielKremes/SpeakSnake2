@@ -38,7 +38,7 @@ body{
 }
 
 .play-board{
-    display: grid; /*mudar pra gri*/
+    display: grid;
     width: 100%;
     height: 100%;
     background-color: #FCE060;
@@ -77,11 +77,9 @@ body{
     align-items: center;
     box-shadow: rgba(50, 50, 93, 0.25) 0px 50px 100px -20px, rgba(0, 0, 0, 0.3) 0px 30px 60px -30px;
 }
-.mFala,.imagemPalavra{
-    /* display: flex;*/
+.mFala, .imagemPalavra, .wordContainer{
     display: none;
     width: 90vmin;
-    height: 90vmin;
     border-radius: 10px;
     background: #ffffff;
     flex-direction: column;
@@ -90,22 +88,48 @@ body{
     align-items: center;
     padding-bottom:10px;
     margin-right: 20px;
-    box-shadow: rgba(50, 50, 93, 0.25) 0px 50px 100px -20px, rgba(0, 0, 0, 0.3) 0px 30px 60px -30px;
+    /* box-shadow: rgba(50, 50, 93, 0.25) 0px 50px 100px -20px, rgba(0, 0, 0, 0.3) 0px 30px 60px -30px; */
 }
 
-.mPontos {
+.imagemPalavra{
+   max-height: 70vmin;
+}
+
+.mFala{
+    min-height: 90vmin;
+}
+
+.wordContainer {
+    width: 100%;
+    height: 20vmin;
+    display: flex;
+    flex-wrap: wrap;
+    /* justify-content: space-between; */;
+    justify-content: center;
+    align-items: center;
+    font-size: clamp(5vw, 10vw, 8rem);
+    font-weight: bold;
+    text-align: center;
+    margin-bottom: 10px;
+}
+
+#hudImagemPalavra{
+    display: none;
+}
+
+.mPontos {  
     display: none;
     width: 90vmin;
     height: 90vmin;
     border-radius: 10px;
     background: #ffffff;
     flex-direction: column;
-    justify-content: center; /* Centraliza os elementos verticalmente */
-    align-items: center; /* Centraliza os elementos horizontalmente */
+    justify-content: center;
+    align-items: center;
     overflow: hidden;
     padding-bottom: 10px;
     margin-right: 20px;
-    text-align: center; /* Centraliza o texto dentro dos elementos */
+    text-align: center; 
     box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1); /* Adiciona uma sombra para um efeito visual melhor */
 }
 
@@ -305,17 +329,6 @@ input{
     box-sizing: border-box;
 }
 
-body {
-    margin: 0;
-    padding: 0;
-    overflow: hidden;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    height: 100vh;
-    background-color: #f0f0f0;
-}
-
 /* Centralizar e definir limite de largura para container */
 .container {
     display: flex;
@@ -416,4 +429,117 @@ button {
 
 button:hover {
     background-color: var(--hover-color);
+}
+
+#overlay {
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    font-size: 5rem;
+    font-weight: bold;
+    opacity: 0;
+    transition: all 0.8s ease;
+    pointer-events: none;
+  }
+
+  .show {
+    opacity: 1;
+    transform: translate(-50%, -50%) scale(1.2);
+  }
+
+  #countdown{
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    font-size: 48px;
+    color: red;
+  }
+
+.countdown-container {
+  position: relative;
+  width: 120px;
+  height: 120px;
+  justify-self: start;
+}
+
+.countdown-circle {
+  transform: rotate(-90deg);
+}
+
+circle {
+  fill: none;
+  stroke-width: 10;
+}
+
+.bg {
+  stroke: #ccc;
+}
+
+.progress {
+  stroke: #00aaff;
+  stroke-linecap: round;
+  stroke-dasharray: 339.292; /* 2 * PI * r (r = 54) */
+  stroke-dashoffset: 0;
+  transition: stroke-dashoffset 0.1s linear;
+}
+
+.countdown-text {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  font-size: 32px;
+  font-weight: bold;
+  color: #333;
+  user-select: none;
+}
+
+#gifFalando{
+    display: inline;
+    width: 150px;
+    height: 150px;
+    justify-self: center;
+}
+
+footer {
+    display: block;
+    width: 100%;
+    text-align: center;
+    padding: 10px;
+    background-color: #1b721b;
+    color: white;
+    border-bottom-left-radius: 10px;
+    border-bottom-right-radius: 10px;
+}
+
+main{
+    margin: 0;
+    padding: 0;
+    overflow: hidden;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 94vh;
+    background-color: #f0f0f0;
+}
+
+.fullscreen {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    border-radius: 10px;
+}
+
+body {
+    margin: 0;
+    padding: 0;
+    height: 4vh;
+    font-family: 'Open Sans', sans-serif;
+    background-color: #f0f0f0;
+}
+
+.bodyblock{
+    display: block;
 }
