@@ -1,12 +1,25 @@
 const countdownSound = new Audio("sfx/countdown.m4a");
 countdownSound.volume = 0.2;
 let lastDirectionKeyCode = 37;
-const gameIntervalTimeFPS = 100;
-const snakeMoveInterval = 10;
+
+const gridSize = 64;
+
+// Game Tick Rate
+const gameIntervalTimeFPS = 300;
 let updateInterval = 500;
-const gridSize = 10;
+
+// Snake movement speed in pixels per movement
+const snakeMoveInterval = gridSize;
+
+//Image for food
+const foodImg = new Image();
+const foodImgSrc = "imagens/SF/icons/";
+foodImg.src = foodImgSrc + "ERROR" + ".png";
+let foodImgLoaded = false;
+let foodImgError = false;
+
 document.addEventListener('DOMContentLoaded', function () {
-    $(document).ready(function() {
+    $(document).ready(function () {
         var SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
         var recognition = new SpeechRecognition();
         var isRecognitionActive = false;
@@ -26,6 +39,10 @@ document.addEventListener('DOMContentLoaded', function () {
         var mPontos = $("#mPontos");
         var textbox = $("#textbox");
         var skipBtn = $("#skipBtn");
+        var botaoCima = $("#cima");
+        var botaoBaixo = $("#baixo");
+        var botaoEsquerda = $("#esquerda");
+        var botaoDireita = $("#direita");
 
         var msg = new SpeechSynthesisUtterance();
         var voices = window.speechSynthesis.getVoices();
@@ -50,65 +67,85 @@ document.addEventListener('DOMContentLoaded', function () {
         var contTentativas = 0;
         var playBoard = document.getElementById("play-board");
         var ctx = playBoard.getContext("2d"); //renderização 2d no canvas
-        
-        const rows = 30;
-        const cols = 30;
-        const cellSize = playBoard.width / cols;
+
+        const rows = 15;
+        const cols = 20;
+        const cellSize = gridSize;
+        playBoard.width = cols * gridSize;
+        playBoard.height = rows * gridSize;
+
+        const maxCols = Math.floor(playBoard.width / cellSize);
+        const maxRows = Math.floor(playBoard.height / cellSize);
 
         function drawChessBackground() {
-        for (let y = 0; y < rows; y++) {
-            for (let x = 0; x < cols; x++) {
-            ctx.fillStyle = (x + y) % 2 === 0 ? "#0045daff" : "#4078d8ff";
-            ctx.fillRect(x * cellSize, y * cellSize, cellSize, cellSize);
+            for (let y = 0; y < rows; y++) {
+                for (let x = 0; x < cols; x++) {
+                    ctx.fillStyle = (x + y) % 2 === 0 ? "#0045daff" : "#4078d8ff";
+                    ctx.fillRect(x * cellSize, y * cellSize, cellSize, cellSize);
+                }
             }
         }
-        }
 
-        let snakeBody =[
-            {x: 150, y: 150},
-            {x: 140, y: 150},
-            {x: 130, y: 150},
-            {x: 120, y: 150},
-            {x: 110, y: 150},
-        ];//coordenadas do corpo da cobra, que serão atualizadas depois
+        const centerX = Math.floor(cols / 2) * cellSize;
+        const centerY = Math.floor(rows / 2) * cellSize;
 
-        let velX = snakeMoveInterval, velY = 0;//velocidade inicial
-        let foodX, foodY; //posição da comida
-        let pontos=0;
-        
-        function changeFoodPosition (){
+        let snakeBody = [
+            { x: centerX, y: centerY },
+            { x: centerX - cellSize, y: centerY },
+            { x: centerX - cellSize * 2, y: centerY },
+            { x: centerX - cellSize * 3, y: centerY },
+            { x: centerX - cellSize * 4, y: centerY }
+        ];
+        let velX = snakeMoveInterval, velY = 0;
+        let foodX, foodY;
+        let pontos = 0;
 
-            foodX = Math.floor(Math.random() * (300 / 10)) * 10;
-            foodY = Math.floor(Math.random() * (250/ 10)) * 10;
-            console.log("Posição"+foodX,foodY);
-        
+        function changeFoodPosition() {
+
+            foodX = Math.floor(Math.random() * maxCols) * cellSize;
+            foodY = Math.floor(Math.random() * maxRows) * cellSize;
+            if (typeof filaPalavras !== 'undefined' && filaPalavras && filaPalavras[0] && filaPalavras[0].imgi !== undefined) {
+                setFoodImage(filaPalavras[0].imgi);
+            }
+
             while (snakeBody.some(part => part.x === foodX && part.y === foodY)) {
-                foodX = Math.floor(Math.random() * (300 / 10)) * 10;
-                foodY = Math.floor(Math.random() * (250 / 10)) * 10;
-            }//garante que a comida não estará dentro do corpo da cobra
+                foodX = Math.floor(Math.random() * maxCols) * cellSize;
+                foodY = Math.floor(Math.random() * maxRows) * cellSize;
+            }
+            foodImgError = false;
+            foodImgLoaded = false;
 
-        
         };
 
-        const foodImg = new Image();
-        const foodImgSrc = "imagens/SF/icons/"; 
-        
-        foodImg.src = foodImgSrc + 0 + ".png";
+        function setFoodImage(index) {
+            const newSrc = foodImgSrc + index + ".png";
+            if (foodImg.src.endsWith(newSrc)) return;
 
-        function drawFood() {
-            const palavraAtual = filaPalavras[0];
-            const foodIconSrc = palavraAtual.imgi;
-            foodImg.src = foodImgSrc + foodIconSrc + ".png";
-            foodImg.onerror = () => {
-                ctx.fillStyle = 'red';
-                ctx.strokeStyle = 'darkred';
-                ctx.fillRect(foodX, foodY, 10, 10);
-                ctx.strokeRect(foodX, foodY, 10, 10);
-            };
+            foodImgLoaded = false;
+            foodImgError = false;
+
+            foodImg.src = newSrc;
 
             foodImg.onload = () => {
-                ctx.drawImage(foodImg, foodX, foodY, 10, 10);
+                foodImgLoaded = true;
             };
+
+            foodImg.onerror = () => {
+                console.warn("Imagem não encontrada:", newSrc);
+                foodImgError = true;
+            };
+        }
+
+        function drawFood() {
+            if (foodImgLoaded && !foodImgError) {
+                ctx.drawImage(foodImg, foodX, foodY, gridSize, gridSize);
+            }
+            else if (foodImgError) {
+                ctx.fillStyle = 'red';
+                ctx.strokeStyle = 'darkred';
+                ctx.fillRect(foodX, foodY, gridSize, gridSize);
+                ctx.strokeRect(foodX, foodY, gridSize, gridSize);
+            }
         }
 
         function startRecognition() {
@@ -119,7 +156,7 @@ document.addEventListener('DOMContentLoaded', function () {
                 console.log("Reconhecimento iniciado");
                 startTimeoutCircle(10000);
                 recognition.start();
-                recognitionTimeout = setTimeout(function() {
+                recognitionTimeout = setTimeout(function () {
                     recognition.stop();
                     console.log("Nenhuma entrada de áudio detectada.");
                 }, 10000);
@@ -129,7 +166,7 @@ document.addEventListener('DOMContentLoaded', function () {
         function showWords(word) {
             const gifFalando = document.getElementById('gifFalando');
             const wordContainer = document.getElementById('palavraFalada');
-            gifFalando.style.display = 'none';  
+            gifFalando.style.display = 'none';
             wordContainer.style.display = 'inline';
             try {
                 wordContainer.textContent = word.toUpperCase();
@@ -169,11 +206,11 @@ document.addEventListener('DOMContentLoaded', function () {
                     dificuldade: dificuldadeValue,
                     tentativas: filaPalavras[0].tentativas
                 },
-                success: function(response) {
+                success: function (response) {
                     console.log("Data sent to the database successfully!");
                     console.log(response);
                 },
-                error: function(xhr, status, error) {
+                error: function (xhr, status, error) {
                     console.error("Error occurred while sending data to the database:", error);
                 }
             });
@@ -185,7 +222,7 @@ document.addEventListener('DOMContentLoaded', function () {
             console.log(filaPalavras);
             contPalavras++;
             contTentativas = contTentativas + filaPalavras[0].tentativas;
-            
+
             mFala.css('display', 'none');
             pontosPalavra.text(pontosP);
 
@@ -193,148 +230,276 @@ document.addEventListener('DOMContentLoaded', function () {
             pontosPalavra.css('color', color);
 
             mPontos.css('display', 'flex');
-            setTimeout(function() {
+            setTimeout(function () {
                 mPontos.css('display', 'none');
-                gamePaused=false;
+                gamePaused = false;
                 togglePause();
             }, 4000);
 
         }
 
         const drawSnake = () => {
-        ctx.fillStyle = '#f9c95bff';
-        ctx.strokeStyle = 'black';
-        ctx.lineWidth = 2;
-            
-        changeSnakeDirection();
+            ctx.fillStyle = '#f9c95bff';
+            ctx.strokeStyle = 'black';
+            ctx.lineWidth = 2;
+            changeSnakeDirection();
 
-        snakeBody.forEach((part, index) => {
-            const nextPart = snakeBody[index + 1];
-            const prevPart = snakeBody[index - 1];
+            snakeBody.forEach((part, index) => {
+                const nextPart = snakeBody[index + 1];
+                const prevPart = snakeBody[index - 1];
+                const r = gridSize / 2;
+                const cx = part.x + r;
+                const cy = part.y + r;
 
-            // Parte da cabeça
-            if (index === 0 && nextPart) {
-            const dir = getPartDirection(part, nextPart);
-            ctx.beginPath();
-            switch (dir) {
-                case "left":
-                    ctx.moveTo(part.x, part.y);
-                    ctx.lineTo(part.x, part.y + 10);
-                    ctx.lineTo(part.x + 10, part.y + 10);
-                    ctx.moveTo(part.x, part.y);
-                    ctx.lineTo(part.x + 10, part.y);
-                    break;
-                case "right":
-                    ctx.moveTo(part.x + 10, part.y);
-                    ctx.lineTo(part.x + 10, part.y + 10);
-                    ctx.lineTo(part.x, part.y + 10);
-                    ctx.moveTo(part.x + 10, part.y);
-                    ctx.lineTo(part.x, part.y);
-                    break;
-                case "up":
-                    ctx.moveTo(part.x, part.y);
-                    ctx.lineTo(part.x + 10, part.y);
-                    ctx.lineTo(part.x + 10, part.y + 10);
-                    ctx.moveTo(part.x, part.y);
-                    ctx.lineTo(part.x, part.y + 10);
-                break;
-                    case "down":
-                    ctx.moveTo(part.x, part.y + 10);
-                    ctx.lineTo(part.x + 10, part.y + 10);
-                    ctx.lineTo(part.x + 10, part.y);
-                    ctx.moveTo(part.x, part.y + 10);
-                    ctx.lineTo(part.x, part.y);
-                    break;
-                default:
-                    ctx.rect(part.x, part.y, 10, 10);
-                break;
-            }
-            ctx.stroke();
-            } 
+                // Parte da cabeça
+                if (index === 0 && nextPart) {
+                    const dir = getPartDirection(part, nextPart);
+                    ctx.beginPath();
+                    switch (dir) {
+                        case "left":
+                            ctx.moveTo(part.x + gridSize, part.y);
+                            ctx.lineTo(part.x + r, part.y);
+                            ctx.arc(part.x + r, cy, r, -Math.PI / 2, Math.PI / 2, true);
+                            ctx.lineTo(part.x + gridSize, part.y + gridSize);
+                            break;
 
-            // Corpo normal
-            else if (index > 0 && index < snakeBody.length - 1) {
-                //para o caso da cobra estar no A1 -> B1 -> B2
-                
-                //A1 = prevPart     (rabo)
-                //B1 = part          (corpo)
-                //B2 = nextPart     (cabeça)
-                
-                //dirPrev = right
-                //dirNext = down
-                //então a parte atual (B1) tem as bordas esquerda e inferior fechadas
-                //e as outras abertas
-                if (!prevPart || !nextPart) return;
-                //dirPrev = right
-                const dirPrev = getPartDirection(prevPart, part);
-                //dirNext = down
-                const dirNext = getPartDirection(part, nextPart);
-                const closedSides = getClosedSides(dirPrev, dirNext);
+                        case "right":
+                            ctx.moveTo(part.x, part.y);
+                            ctx.lineTo(part.x + r, part.y);
+                            ctx.arc(part.x + r, cy, r, -Math.PI / 2, Math.PI / 2, false);
+                            ctx.lineTo(part.x, part.y + gridSize);
+                            break;
+                        case "down":
+                            ctx.moveTo(part.x + gridSize, part.y);
+                            ctx.arc(cx, part.y + r, r, 0, Math.PI, false);
+                            ctx.lineTo(part.x, part.y);
+                            break;
+                        case "up":
+                            ctx.moveTo(part.x+ gridSize, part.y + gridSize);
+                            ctx.arc(cx, part.y + r, r, 0, Math.PI, true);
+                            ctx.lineTo(part.x, part.y + gridSize);
+                            break;
+                        default:
+                            ctx.rect(part.x, part.y, gridSize, gridSize);
+                            break;
+                    }
+                    ctx.fill();
+                    ctx.stroke();
 
-                ctx.beginPath();
-                ctx.rect(part.x, part.y, 10, 10);
-                ctx.fill();
+                    ctx.fillStyle = "white";
+                    ctx.strokeStyle = "black";
+                    const eyeRadius = gridSize * 0.12;
+                    let eye1x, eye1y, eye2x, eye2y;
 
-                // desenha apenas as bordas externas
-                ctx.beginPath();
-                if (closedSides.has("left")) {
-                    ctx.moveTo(part.x, part.y);
-                    ctx.lineTo(part.x, part.y + 10);
+                    switch (dir) {
+                        case "left":
+                            eye1x = part.x + gridSize * 0.55;
+                            eye2x = part.x + gridSize * 0.55;
+                            eye1y = part.y + gridSize * 0.25;
+                            eye2y = part.y + gridSize * 0.75;
+                            break;
+                        case "right":
+                            eye1x = part.x + gridSize * 0.45;
+                            eye2x = part.x + gridSize * 0.45;
+                            eye1y = part.y + gridSize * 0.25;
+                            eye2y = part.y + gridSize * 0.75;
+                            break;
+                        case "up":
+                            eye1x = part.x + gridSize * 0.25;
+                            eye2x = part.x + gridSize * 0.75;
+                            eye1y = part.y + gridSize * 0.55;
+                            eye2y = part.y + gridSize * 0.55;
+                            break;
+                        case "down":
+                            eye1x = part.x + gridSize * 0.25;
+                            eye2x = part.x + gridSize * 0.75;
+                            eye1y = part.y + gridSize * 0.45;
+                            eye2y = part.y + gridSize * 0.45;
+                            break;
+                    }
+
+                    // desenha olhos
+                    ctx.beginPath();
+                    ctx.arc(eye1x, eye1y, eyeRadius, 0, Math.PI * 2);
+                    ctx.moveTo(eye2x + eyeRadius, eye2y);
+                    ctx.arc(eye2x, eye2y, eyeRadius, 0, Math.PI * 2);
+                    ctx.fill();
+                    ctx.stroke();
+
+                    // Pupilas pretas (centralizadas)
+                    ctx.fillStyle = "black";
+                    const pupilRadius = eyeRadius / 1.5;
+                    ctx.beginPath();
+                    ctx.arc(eye1x, eye1y, pupilRadius, 0, Math.PI * 2);
+                    ctx.arc(eye2x, eye2y, pupilRadius, 0, Math.PI * 2);
+                    ctx.fill();
+
+                    // Boca e lingua
+                    ctx.strokeStyle = "#722F37";
+                    ctx.lineWidth = 5;
+                    ctx.beginPath();
+                    switch (dir) {
+                        case "left":
+                            ctx.moveTo(part.x + gridSize * -0.3, part.y + gridSize * 0.45);
+                            ctx.lineTo(part.x, part.y + gridSize * 0.5);
+                            ctx.lineTo(part.x + gridSize * -0.3, part.y + gridSize * 0.65);
+                            break;
+                        case "right":
+                            ctx.moveTo(part.x + gridSize * 1.3, part.y + gridSize * 0.45);
+                            ctx.lineTo(part.x + gridSize, part.y + gridSize * 0.5);
+                            ctx.lineTo(part.x + gridSize * 1.3, part.y + gridSize * 0.65);
+                            break;
+                        case "up":
+                            ctx.moveTo(part.x + gridSize * 0.35, part.y + gridSize * -0.4);
+                            ctx.lineTo(part.x + gridSize * 0.5, part.y);
+                            ctx.lineTo(part.x + gridSize * 0.65, part.y + gridSize * -0.4);
+                            break;
+                        case "down":
+                            ctx.moveTo(part.x + gridSize * 0.35, part.y + gridSize * 1.20);
+                            ctx.lineTo(part.x + gridSize * 0.5, part.y + gridSize);
+                            ctx.lineTo(part.x + gridSize * 0.65, part.y + gridSize * 1.20);
+                            break;
+                    }
+                    ctx.stroke();
+
+                    // 🎧 FONE DE OUVIDO (marrom encorpado)
+                    ctx.save();
+                    ctx.strokeStyle = "#5c5959ff";
+                    ctx.lineWidth = gridSize * 0.1;
+                    ctx.lineCap = "round";
+
+                    //haste do fone
+                    ctx.beginPath();
+                    switch (dir) {
+                        case "left":
+                            ctx.arc(cx, cy, gridSize * 0.65, Math.PI * -0.5, Math.PI * -1.5);
+                            ctx.stroke();
+                            break;
+                        case "right":
+                            ctx.arc(cx, cy, gridSize * 0.65, Math.PI * 0.5, Math.PI * 1.5);
+                            ctx.stroke();
+                            break;
+                        case "up":
+                            ctx.arc(cx, cy, gridSize * 0.65, 0, Math.PI);
+                            ctx.stroke();
+                            break;
+                        case "down":
+                            ctx.arc(cx, cy, gridSize * 0.65, Math.PI, 0);
+                            ctx.stroke();   
+                            break;
+                    }
+                    if (dir === "left" || dir === "right") {
+                        // 🎧 concha inferior
+                        ctx.beginPath();
+                        ctx.arc(cx, cy + gridSize * 0.6, gridSize * 0.2, 0, Math.PI);
+                        ctx.closePath();
+                        ctx.fill();
+                        // 🎧 concha superior
+                        ctx.beginPath();
+                        ctx.arc(cx, cy - gridSize * 0.6, gridSize * 0.2, Math.PI, 0);
+                        ctx.closePath();
+                        ctx.fill();
+                    } else {
+                        if (dir === "up" || dir === "down") {
+                            // 🎧 concha esquerda
+                            ctx.beginPath();
+                            ctx.arc(cx - gridSize * 0.6, cy, gridSize * 0.2, Math.PI * 0.5, Math.PI * 1.5);
+                            ctx.closePath();
+                            ctx.fill();
+                            ctx.beginPath();
+                            ctx.arc(cx + gridSize * 0.6, cy, gridSize * 0.2,  Math.PI * 1.5, Math.PI * 0.5);
+                            ctx.closePath();
+                            ctx.fill();
+                        }
+                    }
+                    ctx.restore();
+                    ctx.closePath();
                 }
-                if (closedSides.has("right")) {
-                    ctx.moveTo(part.x + 10, part.y);
-                    ctx.lineTo(part.x + 10, part.y + 10);
-                }
-                if (closedSides.has("top")) {
-                    ctx.moveTo(part.x, part.y);
-                    ctx.lineTo(part.x + 10, part.y);
-                }
-                if (closedSides.has("bottom")) {
-                    ctx.moveTo(part.x, part.y + 10);
-                    ctx.lineTo(part.x + 10, part.y + 10);
-                }
-                ctx.stroke();
-            }
 
-            // Cauda
-            else if (index === snakeBody.length - 1 && prevPart) {
-            const dir = getPartDirection(prevPart, part);
-            ctx.beginPath();
-                switch (dir) {
-                    case "left":    
+                // Corpo normal
+                else if (index > 0 && index < snakeBody.length - 1) {
+                    //para o caso da cobra estar no A1 -> B1 -> B2
+
+                    //A1 = prevPart     (rabo)
+                    //B1 = part          (corpo)
+                    //B2 = nextPart     (cabeça)
+
+                    //dirPrev = right
+                    //dirNext = down
+                    //então a parte atual (B1) tem as bordas esquerda e inferior fechadas
+                    //e as outras abertas
+                    if (!prevPart || !nextPart) return;
+                    //dirPrev = right
+                    const dirPrev = getPartDirection(prevPart, part);
+                    //dirNext = down
+                    const dirNext = getPartDirection(part, nextPart);
+                    const closedSides = getClosedSides(dirPrev, dirNext);
+
+                    ctx.beginPath();
+                    ctx.rect(part.x, part.y, gridSize, gridSize);
+                    ctx.fillStyle = "#f9c95bff";
+                    ctx.fill();
+                    // desenha apenas as bordas externas
+                    ctx.beginPath();
+                    ctx.strokeStyle = "black";
+                    ctx.lineWidth = 2;
+                    if (closedSides.has("left")) {
                         ctx.moveTo(part.x, part.y);
-                        ctx.lineTo(part.x + 10, part.y);
-                        ctx.lineTo(part.x + 10, part.y + 10);
-                        ctx.lineTo(part.x, part.y + 10);
-                        break;
-                    case "right":
-                        ctx.moveTo(part.x+10, part.y);
-                        ctx.lineTo(part.x, part.y);
-                        ctx.lineTo(part.x, part.y + 10);
-                        ctx.lineTo(part.x + 10, part.y + 10);
-                        break;
-                    case "up":
+                        ctx.lineTo(part.x, part.y + gridSize);
+                    }
+                    if (closedSides.has("right")) {
+                        ctx.moveTo(part.x + gridSize, part.y);
+                        ctx.lineTo(part.x + gridSize, part.y + gridSize);
+                    }
+                    if (closedSides.has("top")) {
                         ctx.moveTo(part.x, part.y);
-                        ctx.lineTo(part.x, part.y+10);
-                        ctx.lineTo(part.x + 10, part.y + 10);
-                        ctx.lineTo(part.x +10, part.y);
-                        break;
-                    case "down":
-                        ctx.moveTo(part.x, part.y + 10);
-                        ctx.lineTo(part.x, part.y);
-                        ctx.lineTo(part.x + 10, part.y);
-                        ctx.lineTo(part.x + 10, part.y + 10);
-                        break;
-                    default:
-                        ctx.rect(part.x, part.y, 10, 10);
-                        break;
+                        ctx.lineTo(part.x + gridSize, part.y);
+                    }
+                    if (closedSides.has("bottom")) {
+                        ctx.moveTo(part.x, part.y + gridSize);
+                        ctx.lineTo(part.x + gridSize, part.y + gridSize);
+                    }
+                    ctx.fill();
+                    ctx.stroke();
                 }
-                ctx.stroke();
-            }
 
-            // Preenche o quadrado da parte atual
-            ctx.fillRect(part.x, part.y, 10, 10);
-        });
+                // Cauda
+                else if (index === snakeBody.length - 1 && prevPart) {
+                    const dir = getPartDirection(prevPart, part);
+                    ctx.beginPath();
+                    switch (dir) {
+                        case "left":
+                            ctx.moveTo(part.x, part.y);
+                            ctx.lineTo(part.x + gridSize, part.y);
+                            ctx.lineTo(part.x + gridSize, part.y + gridSize);
+                            ctx.lineTo(part.x, part.y + gridSize);
+                            break;
+                        case "right":
+                            ctx.moveTo(part.x + gridSize, part.y);
+                            ctx.lineTo(part.x, part.y);
+                            ctx.lineTo(part.x, part.y + gridSize);
+                            ctx.lineTo(part.x + gridSize, part.y + gridSize);
+                            break;
+                        case "up":
+                            ctx.moveTo(part.x, part.y);
+                            ctx.lineTo(part.x, part.y + gridSize);
+                            ctx.lineTo(part.x + gridSize, part.y + gridSize);
+                            ctx.lineTo(part.x + gridSize, part.y);
+                            break;
+                        case "down":
+                            ctx.moveTo(part.x, part.y + gridSize);
+                            ctx.lineTo(part.x, part.y);
+                            ctx.lineTo(part.x + gridSize, part.y);
+                            ctx.lineTo(part.x + gridSize, part.y + gridSize);
+                            break;
+                        default:
+                            ctx.rect(part.x, part.y, gridSize, gridSize);
+                            break;
+                    }
+                    ctx.stroke();
+                    ctx.fill();
+                }
+            });
         };
         const getPartDirection = (current, next) => {
             if (!next) return null;
@@ -348,15 +513,15 @@ document.addEventListener('DOMContentLoaded', function () {
         function getClosedSides(dirPrev, dirNext) {
             //dirPrev = right
             //dirNext = down
-            
+
             //remove as bordas que devem estar abertas
             if (!dirPrev || !dirNext) return new Set(["left", "right", "top", "bottom"]);
             const sides = new Set(["left", "right", "top", "bottom"]);
             switch (dirPrev) {
-                case "left":  sides.delete("left"); break;
+                case "left": sides.delete("left"); break;
                 case "right": sides.delete("right"); break;
-                case "up":    sides.delete("top"); break;
-                case "down":  sides.delete("bottom"); break;
+                case "up": sides.delete("top"); break;
+                case "down": sides.delete("bottom"); break;
             }
             // Este switch é invertido porque dirNext indica
             // a direção da próxima parte, então
@@ -364,10 +529,10 @@ document.addEventListener('DOMContentLoaded', function () {
             // esquerda deve estar aberta e a direita fechada
             // no caso dirNext = down -> remove a borda de cima
             switch (dirNext) {
-                case "left":  sides.delete("right"); break;
+                case "left": sides.delete("right"); break;
                 case "right": sides.delete("left"); break;
-                case "up":    sides.delete("bottom"); break;
-                case "down":  sides.delete("top"); break;
+                case "up": sides.delete("bottom"); break;
+                case "down": sides.delete("top"); break;
             }
             return sides;
         }
@@ -382,8 +547,11 @@ document.addEventListener('DOMContentLoaded', function () {
                 snakeBody.unshift({ x: newX, y: newY });
 
                 if (newX === foodX && newY === foodY) {
-                    falaPalavra();
                     changeFoodPosition();
+                    gamePaused = true;
+                    setTimeout(() => {
+                        falaPalavra();
+                    }, gameIntervalTimeFPS * 2);
                 } else {
                     snakeBody.pop();
                 }
@@ -397,7 +565,7 @@ document.addEventListener('DOMContentLoaded', function () {
             //     x: snakeBody[0].x + velX,
             //     y: snakeBody[0].y + velY
             // };//nova posição da cabeça
-     
+
             // snakeBody.unshift(newHead); //adiciona a nova cabeça/difreção no corpo da cobra
 
             // if (newHead.x === foodX && newHead.y === foodY) {  // Se a cobra comer a comida
@@ -410,21 +578,20 @@ document.addEventListener('DOMContentLoaded', function () {
 
         const checkCollision = () => {
             const head = snakeBody[0];
-          // Verifica se a cabeça atravessou as bordas e reaparece do lado oposto
-        if (head.x > 290) head.x = 0;
-        if (head.x < 0) head.x =300;
-        if (head.y == (260)) head.y = 0;
-        if (head.y < 0) head.y = 260;
 
-            // Verifica colisão com o próprio corpo
+            if (head.x >= playBoard.width) head.x = 0;
+            if (head.x < 0) head.x = playBoard.width - cellSize;
+            if (head.y >= playBoard.height) head.y = 0;
+            if (head.y < 0) head.y = playBoard.height - cellSize;
+
             for (let i = 1; i < snakeBody.length; i++) {
                 if (head.x === snakeBody[i].x && head.y === snakeBody[i].y) {
                     vitoria();
                 }
             }
         };
-        
-        $("#listenBtn").click(function(event) {
+
+        $("#listenBtn").click(function (event) {
             event.preventDefault();
             recognition.stop();
             console.log("Botão de reprodução foi clicado");
@@ -433,27 +600,27 @@ document.addEventListener('DOMContentLoaded', function () {
             falaPalavra();
         });
 
-        finalBtn.click(function() {
+        finalBtn.click(function () {
             console.log("Botão Finalizar clicado");
             vitoria();
         });
 
-        pauseBtn.click(function(){
+        pauseBtn.click(function () {
             console.log("Botão pausar clicado");
-            gamePaused =! gamePaused;
-            if(gamePaused){
+            gamePaused = !gamePaused;
+            if (gamePaused) {
                 clearInterval(gameInterval);
-            }else{
+            } else {
                 gameInterval = setInterval(updateCanvas, gameIntervalTimeFPS); // executa o update canvas
-            }  
+            }
         })
 
-        endBtn.click(function() {
+        endBtn.click(function () {
             console.log("Botão Finalizar clicado");
             vitoria();
         });
 
-        skipBtn.click(function() {
+        skipBtn.click(function () {
             console.log("Botão Pular clicado");
             filaPalavras.push(filaPalavras.shift());
             falaPalavra();
@@ -481,7 +648,6 @@ document.addEventListener('DOMContentLoaded', function () {
         }
 
         async function falaPalavra() {
-            gamePaused = true;
             togglePause();
 
             var palavra = filaPalavras[0].palavra;
@@ -504,44 +670,44 @@ document.addEventListener('DOMContentLoaded', function () {
             }
 
             startRecognition();
-}
+        }
 
 
         function speakAsync(msg, timeout = 3000) {
             return new Promise((resolve, reject) => {
                 const timer = setTimeout(() => {
-                if (speechSynthesis.speaking) {
-                    speechSynthesis.cancel();
-                    reject("Timeout: fala interrompida.");
-                }
+                    if (speechSynthesis.speaking) {
+                        speechSynthesis.cancel();
+                        reject("Timeout: fala interrompida.");
+                    }
                 }, timeout);
 
                 msg.onend = () => {
-                clearTimeout(timer);
-                resolve("Fala concluída.");
+                    clearTimeout(timer);
+                    resolve("Fala concluída.");
                 };
 
                 msg.onerror = (e) => {
-                clearTimeout(timer);
-                reject("Erro no speech: " + e.error);
+                    clearTimeout(timer);
+                    reject("Erro no speech: " + e.error);
                 };
 
                 speechSynthesis.speak(msg);
                 countdown();
             });
         }
-        
+
         function countdown() {
-            const palavraFalada = document.getElementById('palavraFalada'); 
+            const palavraFalada = document.getElementById('palavraFalada');
             const gifFalando = document.getElementById('gifFalando');
 
             gifFalando.style.display = 'none';
             palavraFalada.style.display = 'inline';
             try {
-                
+
                 let count = 3;
                 palavraFalada.textContent = count;
-                
+
                 const interval = setInterval(() => {
                     count--;
                     if (count > 0) {
@@ -587,9 +753,9 @@ document.addEventListener('DOMContentLoaded', function () {
                 circle.style.strokeDashoffset = offset;
 
                 if (remaining <= 0) {
-                clearInterval(timer);
-                circle.style.strokeDashoffset = circumference;
-                text.textContent = "0";
+                    clearInterval(timer);
+                    circle.style.strokeDashoffset = circumference;
+                    text.textContent = "0";
                 }
             }, 100);
         }
@@ -599,20 +765,20 @@ document.addEventListener('DOMContentLoaded', function () {
             countdownContainer.style.display = "none";
         }
 
-        recognition.onstart = function() {
+        recognition.onstart = function () {
             console.log("Reconhecimento por voz iniciado");
             isRecognitionActive = true;
             clearTimeout(recognitionTimeout);
         };
 
-        recognition.onend = function() {
+        recognition.onend = function () {
             console.log("Fim do reconhecimento");
             isRecognitionActive = false;
             clearTimeout(recognitionTimeout);
             stopTimeoutCircle();
         };
 
-        recognition.onerror = function(event) {
+        recognition.onerror = function (event) {
             console.log("Error: " + event.error);
             if (event.message) {
                 console.log("Error Details: " + event.message);
@@ -621,7 +787,7 @@ document.addEventListener('DOMContentLoaded', function () {
             stopTimeoutCircle();
         };
 
-        recognition.onresult = function(event) {
+        recognition.onresult = function (event) {
             console.log("Processando resultados...");
             var resultado = event.resultIndex;
             var transcript = event.results[resultado][0].transcript;
@@ -689,11 +855,11 @@ document.addEventListener('DOMContentLoaded', function () {
                     tentativas: contTentativas,
                     pontuacao: pontos
                 },
-                success: function(response) {
+                success: function (response) {
                     console.log("Data sent to the database successfully!");
                     console.log(response);
                 },
-                error: function(xhr, status, error) {
+                error: function (xhr, status, error) {
                     console.error("Error occurred while sending data to the database:", error);
                 }
             });
@@ -728,13 +894,42 @@ document.addEventListener('DOMContentLoaded', function () {
 
         const changeDirection = (event) => {
             lastDirectionKeyCode = event.keyCode;
+            switch (event.keyCode) {
+                case 37:
+                    botaoEsquerda.addClass("direcao_active");
+                    setTimeout(() => {
+                        botaoEsquerda.removeClass("direcao_active");
+                    }, 100);
+                    break;
+                case 38:
+                    botaoCima.addClass("direcao_active");
+                    setTimeout(() => {
+                        botaoCima.removeClass("direcao_active");
+                    }, 100);
+                    break;
+                case 39:
+                    botaoDireita.addClass("direcao_active");
+                    setTimeout(() => {
+                        botaoDireita.removeClass("direcao_active");
+                    }, 100);
+                    break;
+                case 40:
+                    botaoBaixo.addClass("direcao_active");
+                    setTimeout(() => {
+                        botaoBaixo.removeClass("direcao_active");
+                    }, 100);
+                    event.preventDefault(); // impede o scroll da página
+                    break;
+                default:
+                    break;
+            }
         };
 
         const changeSnakeDirection = () => {
-            const goingUp = velY === -10;
-            const goingDown = velY === 10;
-            const goingRight = velX === 10;
-            const goingLeft = velX === -10;
+            const goingUp = velY === (-1 * snakeMoveInterval);
+            const goingDown = velY === snakeMoveInterval;
+            const goingRight = velX === snakeMoveInterval;
+            const goingLeft = velX === (-1 * snakeMoveInterval);
 
             if (lastDirectionKeyCode === 37 && !goingRight) {
                 velX = snakeMoveInterval * -1;
@@ -755,8 +950,6 @@ document.addEventListener('DOMContentLoaded', function () {
             if (gamePaused) {
                 console.log("Game Paused");
                 clearInterval(gameInterval);
-                //gameInterval = null;
-
                 mJogo.css('display', 'none');
                 mFala.css('display', 'flex');
                 imagemPalavra.css('display', 'inline');
@@ -773,17 +966,21 @@ document.addEventListener('DOMContentLoaded', function () {
 
         const updateCanvas = () => {
             ctx.clearRect(0, 0, playBoard.width, playBoard.height);
-            drawChessBackground(); 
+            drawChessBackground();
             drawFood();
             drawSnake();
-            advanceSnake();        // atualiza a posição
-            checkCollision?.();    // se você tiver essa função, mantém aqui
+            advanceSnake();
+            checkCollision?.();
         };
 
         const initGame = () => {
-           changeFoodPosition();//desenha a comida
-           gameInterval = setInterval(updateCanvas, gameIntervalTimeFPS); // executa o update canvas
-           document.addEventListener("keydown", changeDirection);
+            changeFoodPosition();
+            gameInterval = setInterval(updateCanvas, gameIntervalTimeFPS); // executa o update canvas
+            document.addEventListener("keydown", changeDirection);
+            botaoCima.on("click", () => changeDirection({ keyCode: 38 }));
+            botaoBaixo.on("click", () => changeDirection({ keyCode: 40 }));
+            botaoEsquerda.on("click", () => changeDirection({ keyCode: 37 }));
+            botaoDireita.on("click", () => changeDirection({ keyCode: 39 }));
             drawSnake();
         }
         initGame();
@@ -813,5 +1010,6 @@ document.addEventListener('DOMContentLoaded', function () {
         console.log("Dif: " + dificuldadeValue);
         console.log(filaPalavras);
         filaPalavras = ordenaPalavras(filaPalavras);
+        setFoodImage(filaPalavras[0].imgi);
     });
 });

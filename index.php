@@ -25,7 +25,13 @@ if(isset($_POST['nome'])){
          
         $_SESSION['ID']=$usuario['ID'];
         $_SESSION['nome']=$usuario['nome'];
-        header("Location:selecao.php");
+        if (!empty($_POST['senha'])) {
+            header("Location: estatisticas.php");
+            exit;
+        } else {
+            header("Location: selecao.php");
+            exit;
+        }
         //echo "<script>window.location.href='selecao.php';</script>"; //muda página se o login funcionar
     }else{
         echo "<script>alert('Falha ao logar');</script>";

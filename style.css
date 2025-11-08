@@ -543,3 +543,53 @@ body {
 .bodyblock{
     display: block;
 }
+
+.controle-direcao {
+    display: grid;
+    grid-template-columns: repeat(3, 50px);
+    grid-template-rows: repeat(2, 50px);
+    justify-content: space-between;
+    align-items: center;
+    user-select: none; 
+    gap: 2px;
+}
+
+.direcao {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    width: 50px;
+    height: 50px;
+    font-size: 24px;
+    background-color: #1d4ed8;
+    border: 2px solid #1e40af;
+    color: white;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: 0.2s;
+    user-select: none;
+}
+
+/* Animação ao clicar */
+.direcao_active {
+    transform: scale(0.95);
+    background-color: #3b82f6;
+}
+
+/* Grid direcional */
+#cima {
+    grid-column: 2;
+    grid-row: 1;
+}
+#esquerda {
+    grid-column: 1;
+    grid-row: 2;
+}
+#baixo {
+    grid-column: 2;
+    grid-row: 2;
+}
+#direita {
+    grid-column: 3;
+    grid-row: 2;
+}

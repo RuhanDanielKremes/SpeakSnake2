@@ -3,6 +3,7 @@
         session_start();
         echo "<input type='hidden' id='nomeUsuario' value='" . $_SESSION['nome'] . "'>";
     }
+    
 ?>
 
 <!DOCTYPE html>
@@ -27,15 +28,20 @@
 
         <div class="wrapper" id="wrapper">
             <div class="game-details" style="display: flex; align-items: center;">
-                <span id="score" style="margin-right: auto;">Pontos: 000</span>
-                <button id="pausar" class="pausar" style="background-color:rgb(81, 72, 245); color: white; border: none; padding: 10px 20px; font-size: 16px; cursor: pointer; margin-top: 10px; margin-right: 10px; border-radius: 10px; box-shadow: 2px 2px 5px rgba(0, 0, 0, 0.5);">Pausar</button>
-                <button id="finalizar" class="finalizar" style="background-color: red; color: white; border: none; padding: 10px 20px; font-size: 16px; cursor: pointer; margin-top: 10px; border-radius: 10px; box-shadow: 2px 2px 5px rgba(0, 0, 0, 0.5);">Finalizar</button>
+                <span id="score">Pontos: 000</span>
+                <div class="controle-direcao">
+                    <div id="cima" class="direcao">↑</div>
+                    <div id="esquerda" class="direcao">←</div>
+                    <div id="baixo" class="direcao">↓</div>
+                    <div id="direita" class="direcao">→</div>
+                </div>
+                <div>
+                    <button id="pausar" class="pausar" style="background-color:rgb(81, 72, 245); color: white; border: none; padding: 10px 20px; font-size: 16px; cursor: pointer; margin-top: 10px; margin-right: 10px; border-radius: 10px; box-shadow: 2px 2px 5px rgba(0, 0, 0, 0.5);">Pausar</button>
+                    <button id="finalizar" class="finalizar" style="background-color: red; color: white; border: none; padding: 10px 20px; font-size: 16px; cursor: pointer; margin-top: 10px; border-radius: 10px; box-shadow: 2px 2px 5px rgba(0, 0, 0, 0.5);">Finalizar</button>
+                </div>
             </div>
-            <canvas id="play-board" width="300" height="300"></canvas>
-        </div>
-        
-
-
+            <canvas id="play-board"></canvas>
+        </div>       
             <div class="mFala" id="mFala">
                 <h2 style="font-size:400%;">Fale:</h2>
                 <h1 style="font-size: 600%; margin: 0 10px;" id="palavra"></h1>
@@ -80,7 +86,7 @@
                         </svg>
                         <div class="countdown-text" id="countdownText">10</div>
                     </div>
-                    <img id="gifFalando" src="imageNs/assets/recording.gif" alt="Animação de espera">
+                    <img id="gifFalando" src="imagens/assets/recording.gif" alt="Animação de espera">
                     <span id="palavraFalada"></span>
                 </div>
                 <div class="modal-content">
