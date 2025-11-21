@@ -112,6 +112,27 @@ p {
     color: var(--link-hover);
 }
 
+/* ====== COLLAPSIBLE LIST====== */
+.collapsed::after {
+    content: " ▼";
+    font-size: 0.8em;
+}
+
+.expanded::after {
+    content: " ▲";
+    font-size: 0.8em;
+}
+
+dd {
+    display: none;
+    margin-left: 20px;
+}
+
+dt {
+    font-weight: bold;
+    border-bottom: #1f2833 1px solid;
+}
+
 /* ====== MOBILE ====== */
 @media (max-width: 600px) {
     nav ul {

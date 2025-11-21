@@ -3,7 +3,10 @@
         session_start();
         echo "<input type='hidden' id='nomeUsuario' value='" . $_SESSION['nome'] . "'>";
     }
-    
+
+    $prop = parse_ini_file("props.properties");
+    $assetsPath = $prop['ASSETS'];    
+    echo "<input type='hidden' id='assetsPath' value='" . $assetsPath . "'>";
 ?>
 
 <!DOCTYPE html>
@@ -86,7 +89,7 @@
                         </svg>
                         <div class="countdown-text" id="countdownText">10</div>
                     </div>
-                    <img id="gifFalando" src="imagens/assets/recording.gif" alt="Animação de espera">
+                    <img id="gifFalando" src="<?php echo $assetsPath; ?>imagens/assets/recording.gif" alt="Animação de espera">
                     <span id="palavraFalada"></span>
                 </div>
                 <div class="modal-content">

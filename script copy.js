@@ -1,4 +1,7 @@
-document.addEventListener('DOMContentLoaded', function() {
+const prop = parse_ini_file("props.properties");
+const assetsPath = prop['ASSETS'];
+
+document.addEventListener('DOMContentLoaded', function () {
     $(document).ready(function(){
         var SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
         var recognition = new SpeechRecognition();
@@ -46,9 +49,6 @@ document.addEventListener('DOMContentLoaded', function() {
         var contPalavras=0;
         var contTentativas=0; 
 
-
-    
-
         function startRecognition() {
             if (isRecognitionActive) {
                 console.log("Reconhecimento já está ativo, não é possível iniciar novamente.");
@@ -62,10 +62,6 @@ document.addEventListener('DOMContentLoaded', function() {
                 }, 10000);
             }
         }
-
-        
-
-
 
         $("#listenBtn").click(function(event){
             event.preventDefault();
@@ -85,10 +81,7 @@ document.addEventListener('DOMContentLoaded', function() {
             console.log("Botão Pular clicado");
             filaPalavras.push(filaPalavras.shift()); // Move a palavra atual para o fim da fila
             falaPalavra(); // Fala a próxima palavra na fila
-        });
-
-
-      
+        });  
 
         function ordenaPalavras(filaPalavras) {
 
@@ -112,13 +105,11 @@ document.addEventListener('DOMContentLoaded', function() {
             return filaPalavras;
         }
 
-
-
         function falaPalavra(){
             togglePause();
             var palavra=filaPalavras[0].palavra;
             var indice=filaPalavras[0].imgi;
-            var imgSrc="imagens/"+imgFolder+"/"+indice+".jpg"
+            var imgSrc= assetsPath + "imagens/"+imgFolder+"/"+indice+".jpg"
 
             updateLives();
             console.log("Fonte da imagem "+imgSrc);
@@ -353,10 +344,6 @@ document.addEventListener('DOMContentLoaded', function() {
                 initGame();
             }
         }
-        
-        
-
-
 
         const togglePause = () => {
             if (gamePaused) {

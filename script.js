@@ -1,4 +1,8 @@
-const countdownSound = new Audio("sfx/countdown.m4a");
+// const prop = parse_ini_file("props.properties");
+const assetsPath = document.getElementById("assetsPath").value;
+// const assetsPath = prop['ASSETS'];
+
+const countdownSound = new Audio(assetsPath + "sfx/countdown.m4a");
 countdownSound.volume = 0.2;
 let lastDirectionKeyCode = 37;
 
@@ -13,10 +17,18 @@ const snakeMoveInterval = gridSize;
 
 //Image for food
 const foodImg = new Image();
-const foodImgSrc = "imagens/SF/icons/";
+let imagesFolder = getFolderName('imgFolder');
+const foodImgSrc = assetsPath + "imagens/" + imagesFolder + "/icons/";
 foodImg.src = foodImgSrc + "ERROR" + ".png";
 let foodImgLoaded = false;
 let foodImgError = false;
+
+function getFolderName(name) {
+    const value = `; ${document.cookie}`;
+    const parts = value.split(`; ${name}=`);
+    if (parts.length === 2) return parts.pop().split(';').shift();
+    return null;
+}
 
 document.addEventListener('DOMContentLoaded', function () {
     $(document).ready(function () {
@@ -652,7 +664,7 @@ document.addEventListener('DOMContentLoaded', function () {
 
             var palavra = filaPalavras[0].palavra;
             var indice = filaPalavras[0].imgi;
-            var imgSrc = "imagens/" + imgFolder + "/" + indice + ".jpg";
+            var imgSrc = assetsPath + "imagens/" + imgFolder + "/" + indice + ".jpg";
 
             updateLives();
             console.log("Fonte da imagem " + imgSrc);
@@ -846,7 +858,7 @@ document.addEventListener('DOMContentLoaded', function () {
             numPalavras.text(contPalavras);
             numPontos.text(pontos);
 
-            $.ajax({
+                $.ajax({
                 type: 'POST',
                 url: 'conexaoAJAXresultado.php',
                 data: {

@@ -212,7 +212,6 @@
             }
         } else {
             for (let i = 0; i < Math.min(4, totalPaginas); i++) {
-                console.log("i: " + i);
                 container.appendChild(makePaginacaoBotao((i), (i === paginaAtual)));
                 container2.appendChild(makePaginacaoBotao((i), (i === paginaAtual)));
             }

@@ -1,6 +1,9 @@
 <?php
 
 include('conexao.php');
+$prop = parse_ini_file("props.properties");
+$assetsPath = $prop['ASSETS'];
+$baseUrl = $prop['BASEURL'];
 
 
 if(isset($_POST['nome'])){
@@ -25,7 +28,7 @@ if(isset($_POST['nome'])){
          
         $_SESSION['ID']=$usuario['ID'];
         $_SESSION['nome']=$usuario['nome'];
-        if (!empty($_POST['senha'])) {
+        if (!empty($_POST['senha']) && $_POST['senha'] === $prop['ADMIN_PASSWORD']) {
             header("Location: estatisticas.php");
             exit;
         } else {
@@ -42,6 +45,7 @@ if(isset($_POST['nome'])){
 
 <!DOCTYPE html>
 <html lang="pt" dir="auto">
+<base href="<?php echo $baseUrl; ?>">
 <head>
     <meta charset="utf-8">
     <title>SpeakSnake</title>
@@ -54,7 +58,7 @@ if(isset($_POST['nome'])){
     <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.7.1/jquery.min.js"></script>
     <main>
     <div class="mLogin" id="mLogin">
-        <img src="imagens/spk2logo.png" alt="Design-sem-nome-1" width="300" height="300">
+        <img src="<?php echo $assetsPath; ?>imagens/spk2logo.png" alt="Design-sem-nome-1" width="300" height="300">
             <form method="post" name="loginForm" id="loginForm">
                 <h3>Escreva seu nome completo</h3>
                 <input type="text" name="nome" placeholder="Nome">
