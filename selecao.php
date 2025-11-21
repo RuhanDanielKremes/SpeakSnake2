@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="pt" dir="auto">
+
 <head>
     <meta charset="utf-8">
     <title>SpeakSnake</title>
@@ -9,6 +10,7 @@
     <link rel="stylesheet" href="https://fonts.googleapis.com/icon?family=Material+Icons">
 
 </head>
+
 <body>
     <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.7.1/jquery.min.js"></script>
 
@@ -25,14 +27,14 @@
                     <div class="input-container">
                         <input id="facilBtn" type="radio" name="radios" value="true" checked>
                         <div class="radio-tile">
-                        <i class="material-icons">local_florist</i>
-                        <label for="facilBtn">Fácil</label>
+                            <i class="material-icons">local_florist</i>
+                            <label for="facilBtn">Fácil</label>
                         </div>
                     </div>
                     <div class="input-container">
                         <input id="dificilBtn" type="radio" name="radios" value="false">
                         <div class="radio-tile">
-                        <i class="material-icons">waves</i> 
+                            <i class="material-icons">waves</i>
                             <label for="dificilBtn">Difícil</label>
                         </div>
                     </div>
@@ -46,27 +48,27 @@
                     <div class="input-container">
                         <input type="radio" id="Sustentabilidade" name="radios2" value="1" checked>
                         <div class="radio-tile">
-                           <i class="material-icons">eco</i> 
+                            <i class="material-icons">eco</i>
                             <label for="Sustentabilidade">Sustentabilidade</label>
                         </div>
                     </div>
                     <div class="input-container">
                         <input type="radio" id="EducacaoFinanceira" name="radios2" value="2">
                         <div class="radio-tile">
-                        <i class="material-icons">attach_money</i> 
+                            <i class="material-icons">attach_money</i>
                             <label for="EducacaoFinanceira">Educação Financeira</label>
                         </div>
                     </div>
                     <div class="input-container">
                         <input type="radio" id="AlimentacaoSaudavel" name="radios2" value="3">
                         <div class="radio-tile">
-                        <i class="material-icons">water_drop</i> 
+                            <i class="material-icons">water_drop</i>
                             <label for="AlimentacaoSaudavel">Alimentação Saudável</label>
                         </div>
                     </div>
                 </div>
             </div>
-            <button class="boardBtn" id="boardBtn" onclick="redirectToPlayPage()">JOGAR</button>
+            <button class="boardBtn" id="boardBtn" onclick="verificarMicrofone()">JOGAR</button>
             <br>
             <button class="returnBtn1" id="returnBtn1" onclick="logout()">Trocar Usuário</button>
         </div>
@@ -82,16 +84,16 @@
 
     var temaValue = $('input[name="radios2"]:checked').val() || '1';
     var dificuldadeValue = $('input[name="radios"]:checked').val() || 'true';
-    var imgFolder="SF";
-    var filaPalavras=sustFacil;
+    var imgFolder = "SF";
+    var filaPalavras = sustFacil;
 
-    $('input[type="radio"]').on('change',function(){
+    $('input[type="radio"]').on('change', function() {
 
         temaValue = $('input[name="radios2"]:checked').val();
         dificuldadeValue = $('input[name="radios"]:checked').val();
         console.log("Tema selecionado:", temaValue);
         console.log("Dificuldade selecionada:", dificuldadeValue);
-        console.log("Pasta Selecionada:",imgFolder);
+        console.log("Pasta Selecionada:", imgFolder);
 
         if (temaValue === '3' && dificuldadeValue === 'true') {
             filaPalavras = alimentFacil;
@@ -114,17 +116,55 @@
         }
     });
 
+    async function verificarMicrofone() {
+        const status = await navigator.permissions.query({
+            name: "microphone"
+        });
+
+        if (status.state === "granted") {
+            redirectToPlayPage();
+            return;
+        }
+
+        if (status.state === "prompt") {
+            const permitido = await pedirPermissaoMicrofone();
+            if (permitido) {
+                redirectToPlayPage();
+            } else {
+                alert("Você precisa permitir o microfone para jogar.");
+            }
+            return;
+        }
+
+        if (status.state === "denied") {
+            alert("O microfone está bloqueado no navegador. Vá nas configurações do site e libere.");
+            return;
+        }
+    }
+
+    async function pedirPermissaoMicrofone() {
+        try {
+            await navigator.mediaDevices.getUserMedia({
+                audio: true
+            });
+            return true;
+        } catch (err) {
+            console.error("Permissão negada:", err);
+            return false;
+        }
+    }
+
     function redirectToPlayPage() {
         //printa a lista
         console.log("Tema selecionado:", temaValue);
         console.log("Dificuldade selecionada:", dificuldadeValue);
-        console.log("Pasta Selecionada:",imgFolder);
+        console.log("Pasta Selecionada:", imgFolder);
 
         //crie os cookies
 
         document.cookie = `imgFolder=${imgFolder}; path=/`;
         document.cookie = `filaPalavras=${JSON.stringify(filaPalavras)}; path=/`;
-        document.cookie= `dificuldadeValue=${dificuldadeValue}; path=/`;
+        document.cookie = `dificuldadeValue=${dificuldadeValue}; path=/`;
 
         //navega pra proxima page
         window.location.href = "game.php";
@@ -135,4 +175,5 @@
         window.location.href = "logout.php";
     }
 </script>
+
 </html>
